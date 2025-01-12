@@ -1,6 +1,6 @@
 // pages/index.js
 
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import { getSupabase } from "../utils/supabase";
 import Link from "next/link";
 
@@ -23,7 +23,7 @@ const Index = ({ user, todos }) => {
             todos.map((todo) => (
               <div 
                 key={todo.id} 
-                className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-900" // Adicionado text-gray-900
+                className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-900"
               >
                 {todo.content}
               </div>
@@ -40,8 +40,12 @@ const Index = ({ user, todos }) => {
 };
 
 export const getServerSideProps = withPageAuthRequired({
-  async getServerSideProps() {
-    const supabase = getSupabase();
+  async getServerSideProps({ req, res }) {
+    const {
+      user: { accessToken },
+    } = await getSession(req, res);
+
+    const supabase = await getSupabase(accessToken);
 
     const { data: todos } = await supabase.from("todos").select();
 
