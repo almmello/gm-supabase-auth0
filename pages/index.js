@@ -3,9 +3,9 @@ import { getSupabase } from "../utils/supabase";
 import Link from "next/link";
 import { useState } from "react";
 
-const Index = ({ user, todos }) => {
+const Index = ({ user, todos = [] }) => {
   const [content, setContent] = useState("");
-  const [allTodos, setAllTodos] = useState([...todos]);
+  const [allTodos, setAllTodos] = useState(todos || []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,9 +79,18 @@ export const getServerSideProps = withPageAuthRequired({
       user: { accessToken },
     } = await getSession(req, res);
 
-    const supabase = await getSupabase(accessToken);
+    const supabase = await getSupabase(accessToken, req, res);
 
-    const { data: todos } = await supabase.from("todos").select();
+    const { data: todos = [], error } = await supabase
+      .from("todos")
+      .select("id, content, created_at, is_complete")
+      .eq("is_complete", false)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching todos:", error);
+    }
+    console.log("Fetched todos:", todos);
 
     return {
       props: { todos },
